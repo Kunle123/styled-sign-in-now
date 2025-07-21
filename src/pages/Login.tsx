@@ -1,28 +1,128 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, Shield } from "lucide-react";
+import SocialAuthButton from "@/components/auth/SocialAuthButton";
+import CaptchaComponent, { CaptchaRef } from "@/components/auth/CaptchaComponent";
+import { oauthService } from "@/services/oauthService";
+import { useToast } from "@/hooks/use-toast";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [showCaptcha, setShowCaptcha] = useState(false);
+  const captchaRef = useRef<CaptchaRef>(null);
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Show CAPTCHA after first login attempt
+    if (!showCaptcha) {
+      setShowCaptcha(true);
+      toast({
+        title: "Security verification required",
+        description: "Please complete the CAPTCHA below to continue."
+      });
+      return;
+    }
+    
+    if (!captchaToken) {
+      toast({
+        title: "CAPTCHA required",
+        description: "Please complete the CAPTCHA verification.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
-    // TODO: Connect to your backend API
-    console.log("Login attempt:", { email, password });
-    
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // TODO: Connect to your backend API
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ 
+          email, 
+          password, 
+          captchaToken 
+        }),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        toast({
+          title: "Login successful!",
+          description: "Welcome back!"
+        });
+        // Handle successful login (redirect, store token, etc.)
+      } else {
+        const error = await response.json();
+        toast({
+          title: "Login failed",
+          description: error.message || "Invalid credentials",
+          variant: "destructive"
+        });
+        // Reset CAPTCHA on failed attempt
+        captchaRef.current?.reset();
+        setCaptchaToken(null);
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login error",
+        description: "Something went wrong. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
+  };
+
+  const handleGoogleAuth = () => {
+    try {
+      oauthService.initiateGoogleAuth();
+    } catch (error) {
+      toast({
+        title: "OAuth Error",
+        description: "Failed to initiate Google authentication",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleLinkedInAuth = () => {
+    try {
+      oauthService.initiateLinkedInAuth();
+    } catch (error) {
+      toast({
+        title: "OAuth Error", 
+        description: "Failed to initiate LinkedIn authentication",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCaptchaChange = (token: string | null) => {
+    setCaptchaToken(token);
+  };
+
+  const handleCaptchaError = () => {
+    toast({
+      title: "CAPTCHA Error",
+      description: "CAPTCHA verification failed. Please try again.",
+      variant: "destructive"
+    });
+    setCaptchaToken(null);
   };
 
   return (
@@ -92,12 +192,28 @@ const Login = () => {
                 </Link>
               </div>
 
+              {showCaptcha && (
+                <div className="space-y-2">
+                  <Label className="text-foreground font-medium flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    Security Verification
+                  </Label>
+                  <CaptchaComponent
+                    ref={captchaRef}
+                    siteKey="6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI" // Test key - replace with your actual key
+                    onChange={handleCaptchaChange}
+                    onError={handleCaptchaError}
+                    theme="light"
+                  />
+                </div>
+              )}
+
               <Button
                 type="submit"
                 className="w-full bg-auth-gradient hover:opacity-90 border-0 shadow-soft transition-all duration-300 hover:shadow-elegant hover:-translate-y-0.5"
                 disabled={isLoading}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Signing in..." : showCaptcha ? "Verify & Sign In" : "Sign In"}
               </Button>
             </form>
 
@@ -110,21 +226,17 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                className="border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
-              >
-                Google
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
-              >
-                GitHub
-              </Button>
+            <div className="space-y-3">
+              <SocialAuthButton 
+                provider="google" 
+                onClick={handleGoogleAuth}
+                disabled={isLoading}
+              />
+              <SocialAuthButton 
+                provider="linkedin" 
+                onClick={handleLinkedInAuth}
+                disabled={isLoading}
+              />
             </div>
 
             <p className="text-center text-sm text-muted-foreground">
