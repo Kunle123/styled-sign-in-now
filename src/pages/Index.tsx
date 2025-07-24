@@ -23,8 +23,7 @@ const Index = () => {
           </Button>
           <Button 
             asChild 
-            variant="outline" 
-            className="border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300"
+            className="bg-green-600 hover:bg-green-700 text-white shadow-soft transition-all duration-300 hover:shadow-elegant hover:-translate-y-0.5 border-0"
           >
             <Link to="/signup">Create Account</Link>
           </Button>
