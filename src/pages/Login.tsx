@@ -210,8 +210,9 @@ const Login = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-auth-gradient hover:opacity-90 border-0 shadow-soft transition-all duration-300 hover:shadow-elegant hover:-translate-y-0.5"
+                className="w-full bg-auth-gradient border-0 shadow-soft transition-all duration-300 hover:opacity-90 hover:shadow-elegant hover:-translate-y-0.5 focus:opacity-100 focus:shadow-elegant focus:-translate-y-0.5"
                 disabled={isLoading}
+                style={{ opacity: 1, visibility: 'visible' }}
               >
                 {isLoading ? "Signing in..." : showCaptcha ? "Verify & Sign In" : "Sign In"}
               </Button>

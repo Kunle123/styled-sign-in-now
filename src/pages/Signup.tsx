@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,6 +25,7 @@ const Signup = () => {
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const captchaRef = useRef<CaptchaRef>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({
@@ -84,7 +85,9 @@ const Signup = () => {
           title: "Account created successfully!",
           description: "Please check your email to verify your account."
         });
-        // Handle successful registration (redirect to login, etc.)
+        // Redirect to login after successful registration
+        setTimeout(() => navigate("/login"), 1500);
+        return;
       } else {
         const error = await response.json();
         toast({
@@ -287,8 +290,9 @@ const Signup = () => {
 
               <Button
                 type="submit"
-                className="w-full bg-auth-gradient hover:opacity-90 border-0 shadow-soft transition-all duration-300 hover:shadow-elegant hover:-translate-y-0.5"
+                className="w-full bg-auth-gradient border-0 shadow-soft transition-all duration-300 hover:opacity-90 hover:shadow-elegant hover:-translate-y-0.5 focus:opacity-100 focus:shadow-elegant focus:-translate-y-0.5"
                 disabled={isLoading || !agreeToTerms || !captchaToken}
+                style={{ opacity: 1, visibility: 'visible' }}
               >
                 {isLoading ? "Creating account..." : "Create Account"}
               </Button>
